@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Official Print Layout Optimization for iframe and modern browsers */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide background overlays, navigation bars, headers and non-printable elements */
+  header,
+  nav,
+  footer,
+  .print\:hidden,
+  button,
+  .fixed.bottom-0 {
+    display: none !important;
+  }
+
+  /* Printable modals and documents take full page */
+  .printable-document {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    box-shadow: none !important;
+    border: 2px solid #008543 !important;
+    background: #ffffff !important;
+  }
+
+  .printable-modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 12mm;
+  }
+}
+

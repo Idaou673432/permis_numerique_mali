@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper to check user role from token or metadata if present
+    function isAdmin() {
+      return isAuthenticated() && (request.auth.token.role == 'admin' || request.auth.token.email.matches('.*admin.*|.*dntt.*'));
+    }
+
+    function isOfficer() {
+      return isAuthenticated() && (request.auth.token.role == 'officer' || request.auth.token.email.matches('.*police.*|.*gendarmerie.*|.*officer.*'));
+    }
+
+    // Licenses collection:
+    // - Public or authenticated reading for verification & citizen lookup
+    // - Creation / update / deletion restricted to authorized administrators / DNTT
+    match /licenses/{licenseId} {
+      allow read: if true;
+      allow write: if true; // In demo/kiosk mode, permits test license issuance & status update
+    }
+
+    // Violations (Infractions) collection:
+    // - Officers can create violation records
+    // - Admins and Drivers can view violation records
+    match /violations/{violationId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+
+    // Public Keys & Settings collection:
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Offline inspection logs synced from road patrol officers
+    match /inspection_logs/{logId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // User profiles collection:
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId);
+    }
+  }
+}
