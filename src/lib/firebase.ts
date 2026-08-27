@@ -28,8 +28,8 @@ import {
   enableNetwork,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { DriverLicense, Violation, OfflineActivityLog } from '../types';
-import { SEED_LICENSES } from '../data/seedData';
+import { DriverLicense, Violation, OfflineActivityLog, AdminUser } from '../types';
+import { SEED_LICENSES, DEFAULT_ADMINS } from '../data/seedData';
 import { generateQRPayload } from './crypto';
 
 // Initialize Firebase App
@@ -47,12 +47,15 @@ const LICENSES_COLLECTION = 'licenses';
 const VIOLATIONS_COLLECTION = 'violations';
 const INSPECTION_LOGS_COLLECTION = 'inspection_logs';
 const SETTINGS_COLLECTION = 'settings';
+const ADMINS_COLLECTION = 'admins';
 
 // Offline LocalStorage Keys
 const LOCAL_STORAGE_LICENSES_KEY = 'dntt_mali_licenses_cache';
 const LOCAL_STORAGE_MY_LICENSE_KEY = 'dntt_mali_active_license_id';
 const LOCAL_STORAGE_VIOLATIONS_KEY = 'dntt_mali_offline_violations';
 const LOCAL_STORAGE_ACTIVITY_LOGS_KEY = 'dntt_mali_offline_activity_logs';
+const LOCAL_STORAGE_ADMINS_KEY = 'dntt_mali_admins_cache';
+const LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY = 'dntt_mali_active_admin_session';
 const LOCAL_STORAGE_QUOTA_EXCEEDED_KEY = 'dntt_mali_firestore_quota_exceeded';
 
 let isQuotaExceededFlag = (function () {
@@ -193,9 +196,10 @@ export function isOnline(): boolean {
 export async function initializeDatabaseSeed(): Promise<void> {
   try {
     const localCached = localStorage.getItem(LOCAL_STORAGE_LICENSES_KEY);
+    let signedSeeds: DriverLicense[] = [];
+
     if (!localCached) {
       // Pre-sign seed licenses with QR payloads
-      const signedSeeds: DriverLicense[] = [];
       for (const lic of SEED_LICENSES) {
         const qrJson = await generateQRPayload(lic);
         const parsed = JSON.parse(qrJson);
@@ -208,6 +212,25 @@ export async function initializeDatabaseSeed(): Promise<void> {
       if (!localStorage.getItem(LOCAL_STORAGE_MY_LICENSE_KEY)) {
         localStorage.setItem(LOCAL_STORAGE_MY_LICENSE_KEY, signedSeeds[0].id);
       }
+    } else {
+      try {
+        signedSeeds = JSON.parse(localCached);
+      } catch (e) {
+        signedSeeds = SEED_LICENSES;
+      }
+    }
+
+    // Also push initial seeds to Firestore if Firestore is empty and we are online
+    if (isOnline() && !isQuotaExceededFlag && signedSeeds.length > 0) {
+      getDocs(collection(db, LICENSES_COLLECTION))
+        .then(async (snap) => {
+          if (snap.empty) {
+            for (const lic of signedSeeds) {
+              await setDoc(doc(db, LICENSES_COLLECTION, lic.id), lic, { merge: true }).catch(() => {});
+            }
+          }
+        })
+        .catch(() => {});
     }
   } catch (error) {
     console.warn('Initialisation cache local:', error);
@@ -221,7 +244,10 @@ export function getLocalLicenses(): DriverLicense[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_LICENSES_KEY);
     if (raw !== null) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.error('Erreur lecture cache local:', e);
@@ -241,61 +267,158 @@ export function setLocalLicenses(licenses: DriverLicense[]): void {
 }
 
 /**
- * Fetch all licenses from Firestore with local cache sync
+ * Fetch all licenses with resilient bidirectional local + Firestore merge
  */
 export async function fetchAllLicenses(): Promise<DriverLicense[]> {
-  try {
-    if (!isOnline() || isQuotaExceededFlag) {
-      return getLocalLicenses();
-    }
+  const localList = getLocalLicenses();
+  if (!isOnline() || isQuotaExceededFlag) {
+    return localList;
+  }
 
+  try {
     const snapshot = await getDocs(collection(db, LICENSES_COLLECTION));
     if (snapshot.empty) {
-      const fallback = getLocalLicenses();
-      return fallback;
+      // Seed Firestore with local list so they persist in the cloud
+      for (const lic of localList) {
+        setDoc(doc(db, LICENSES_COLLECTION, lic.id), lic, { merge: true }).catch(() => {});
+      }
+      return localList;
     }
 
-    const licenses: DriverLicense[] = [];
+    const firestoreList: DriverLicense[] = [];
     snapshot.forEach((docSnap) => {
-      licenses.push(docSnap.data() as DriverLicense);
+      firestoreList.push(docSnap.data() as DriverLicense);
     });
 
-    setLocalLicenses(licenses);
-    return licenses;
+    // Bidirectional merge to NEVER lose locally saved or cloud saved licenses
+    const licenseMap = new Map<string, DriverLicense>();
+
+    // 1. Put Firestore records in map
+    firestoreList.forEach((lic) => {
+      licenseMap.set(lic.id, lic);
+    });
+
+    // 2. Put local records in map (if not yet in Firestore, keep and sync up)
+    localList.forEach((lic) => {
+      if (!licenseMap.has(lic.id)) {
+        licenseMap.set(lic.id, lic);
+        // Sync locally created license to Firestore in background
+        if (isOnline() && !isQuotaExceededFlag) {
+          setDoc(doc(db, LICENSES_COLLECTION, lic.id), lic, { merge: true }).catch(() => {});
+        }
+      } else {
+        // Compare updatedAt timestamp to keep the latest modification
+        const cloudLic = licenseMap.get(lic.id)!;
+        const localTime = lic.updatedAt ? new Date(lic.updatedAt).getTime() : 0;
+        const cloudTime = cloudLic.updatedAt ? new Date(cloudLic.updatedAt).getTime() : 0;
+        if (localTime > cloudTime) {
+          licenseMap.set(lic.id, lic);
+          setDoc(doc(db, LICENSES_COLLECTION, lic.id), lic, { merge: true }).catch(() => {});
+        }
+      }
+    });
+
+    const mergedLicenses = Array.from(licenseMap.values());
+    setLocalLicenses(mergedLicenses);
+    return mergedLicenses;
   } catch (error) {
     if (isResourceExhaustedError(error)) {
       setFirestoreQuotaExceeded(true);
     }
-    console.warn('Lecture Firestore indisponible, utilisation du cache local:', error);
-    return getLocalLicenses();
+    console.warn('Lecture Firestore indisponible, utilisation du cache local sécurisé:', error);
+    return localList;
   }
 }
 
 /**
- * Save or update a driver license (Firestore + LocalStorage)
+ * Subscribe in real-time to licenses updates in Firestore
  */
-export async function saveDriverLicense(license: DriverLicense): Promise<void> {
-  // 1. Ensure signature exists
-  if (!license.signature) {
-    const qrText = await generateQRPayload(license);
-    const parsed = JSON.parse(qrText);
-    license.signature = parsed.sig;
+export function subscribeLicenses(
+  onUpdate: (licenses: DriverLicense[]) => void
+): () => void {
+  if (!isOnline() || isQuotaExceededFlag) {
+    onUpdate(getLocalLicenses());
+    return () => {};
   }
 
-  // 2. Update local storage immediately (Instant feedback)
+  try {
+    const unsub = onSnapshot(
+      collection(db, LICENSES_COLLECTION),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const firestoreLicenses: DriverLicense[] = [];
+          snapshot.forEach((d) => {
+            firestoreLicenses.push(d.data() as DriverLicense);
+          });
+
+          // Merge with local to preserve any pending offline items
+          const localList = getLocalLicenses();
+          const map = new Map<string, DriverLicense>();
+          firestoreLicenses.forEach((l) => map.set(l.id, l));
+          localList.forEach((l) => {
+            if (!map.has(l.id)) {
+              map.set(l.id, l);
+            }
+          });
+
+          const merged = Array.from(map.values());
+          setLocalLicenses(merged);
+          onUpdate(merged);
+        }
+      },
+      (error) => {
+        if (isResourceExhaustedError(error)) {
+          setFirestoreQuotaExceeded(true);
+        }
+        onUpdate(getLocalLicenses());
+      }
+    );
+    return unsub;
+  } catch (e) {
+    onUpdate(getLocalLicenses());
+    return () => {};
+  }
+}
+
+/**
+ * Save or update a driver license (Firestore + LocalStorage) permanently
+ */
+export async function saveDriverLicense(license: DriverLicense): Promise<DriverLicense> {
+  const updatedLicense = { ...license };
+
+  // 1. Ensure updated timestamp
+  if (!updatedLicense.updatedAt) {
+    updatedLicense.updatedAt = new Date().toISOString();
+  }
+
+  // 2. Ensure cryptographic signature exists & is valid
+  if (!updatedLicense.signature) {
+    const qrText = await generateQRPayload(updatedLicense);
+    const parsed = JSON.parse(qrText);
+    updatedLicense.signature = parsed.sig;
+  }
+
+  // 3. Update local storage immediately (Instant feedback & offline persistence)
   const current = getLocalLicenses();
-  const index = current.findIndex((l) => l.id === license.id);
+  const index = current.findIndex((l) => l.id === updatedLicense.id);
   if (index >= 0) {
-    current[index] = license;
+    current[index] = updatedLicense;
   } else {
-    current.unshift(license);
+    current.unshift(updatedLicense);
   }
   setLocalLicenses(current);
 
-  // 3. Sync to Firestore if online and quota not exceeded
+  // 4. Remember active license ID so it opens automatically
+  try {
+    localStorage.setItem(LOCAL_STORAGE_MY_LICENSE_KEY, updatedLicense.id);
+  } catch (e) {
+    // Ignore storage error
+  }
+
+  // 5. Sync to Firestore permanently
   if (isOnline() && !isQuotaExceededFlag) {
     try {
-      await setDoc(doc(db, LICENSES_COLLECTION, license.id), license, { merge: true });
+      await setDoc(doc(db, LICENSES_COLLECTION, updatedLicense.id), updatedLicense, { merge: true });
     } catch (e) {
       if (isResourceExhaustedError(e)) {
         setFirestoreQuotaExceeded(true);
@@ -303,6 +426,8 @@ export async function saveDriverLicense(license: DriverLicense): Promise<void> {
       console.warn('Sauvegarde Firestore différée (stocké localement):', e);
     }
   }
+
+  return updatedLicense;
 }
 
 /**
@@ -702,3 +827,247 @@ export async function syncPendingActivityLogs(): Promise<{ syncedCount: number; 
   setLocalActivityLogs(all);
   return { syncedCount, errorCount };
 }
+
+// ==========================================
+// ADMINISTRATOR MANAGEMENT & AUTHENTICATION (00223)
+// ==========================================
+
+export function getLocalAdmins(): AdminUser[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_ADMINS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Erreur lecture admins locaux:', e);
+  }
+  // Default seed admins with master code 00223
+  setLocalAdmins(DEFAULT_ADMINS);
+  return DEFAULT_ADMINS;
+}
+
+export function setLocalAdmins(admins: AdminUser[]): void {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_ADMINS_KEY, JSON.stringify(admins));
+  } catch (e) {
+    console.error('Erreur écriture admins locaux:', e);
+  }
+}
+
+export function getActiveAdminSession(): AdminUser | null {
+  try {
+    const raw = sessionStorage.getItem(LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY) ||
+                localStorage.getItem(LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error('Erreur lecture session admin:', e);
+  }
+  return null;
+}
+
+export function setActiveAdminSession(admin: AdminUser | null, remember: boolean = true): void {
+  try {
+    if (admin) {
+      const serialized = JSON.stringify(admin);
+      sessionStorage.setItem(LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY, serialized);
+      if (remember) {
+        localStorage.setItem(LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY, serialized);
+      }
+    } else {
+      sessionStorage.removeItem(LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_ADMIN_SESSION_KEY);
+    }
+  } catch (e) {
+    console.error('Erreur sauvegarde session admin:', e);
+  }
+}
+
+/**
+ * Fetch all admins from Firestore with fallback to LocalStorage
+ */
+export async function fetchAllAdmins(): Promise<AdminUser[]> {
+  const localList = getLocalAdmins();
+
+  if (!isOnline() || isQuotaExceededFlag) {
+    return localList;
+  }
+
+  try {
+    const snap = await getDocs(collection(db, ADMINS_COLLECTION));
+    if (snap.empty) {
+      // Seed Firestore with default admins
+      for (const adm of localList) {
+        try {
+          await setDoc(doc(db, ADMINS_COLLECTION, adm.id), adm);
+        } catch (e) {
+          // Ignore individual seed errors
+        }
+      }
+      return localList;
+    }
+
+    const firestoreList = snap.docs.map((d) => d.data() as AdminUser);
+    setLocalAdmins(firestoreList);
+    return firestoreList;
+  } catch (e: any) {
+    if (isResourceExhaustedError(e)) {
+      setFirestoreQuotaExceeded(true);
+    }
+    console.warn('Utilisation du cache local pour les administrateurs:', e.message);
+    return localList;
+  }
+}
+
+/**
+ * Save or update an administrator in Firestore and LocalStorage
+ */
+export async function saveAdminUser(admin: AdminUser): Promise<AdminUser> {
+  const updatedAdmin: AdminUser = {
+    ...admin,
+    updatedAt: new Date().toISOString(),
+  };
+
+  // 1. Update local cache immediately
+  const localList = getLocalAdmins();
+  const index = localList.findIndex((a) => a.id === updatedAdmin.id);
+  let updatedList: AdminUser[];
+  if (index >= 0) {
+    updatedList = [...localList];
+    updatedList[index] = updatedAdmin;
+  } else {
+    updatedList = [updatedAdmin, ...localList];
+  }
+  setLocalAdmins(updatedList);
+
+  // If this is the current active admin, update session
+  const activeSession = getActiveAdminSession();
+  if (activeSession && activeSession.id === updatedAdmin.id) {
+    setActiveAdminSession(updatedAdmin);
+  }
+
+  // 2. Persist to Firestore if online
+  if (isOnline() && !isQuotaExceededFlag) {
+    try {
+      await setDoc(doc(db, ADMINS_COLLECTION, updatedAdmin.id), updatedAdmin);
+    } catch (e: any) {
+      if (isResourceExhaustedError(e)) {
+        setFirestoreQuotaExceeded(true);
+      }
+      console.warn('Sauvegarde Firestore échouée (conservé en cache local):', e.message);
+    }
+  }
+
+  return updatedAdmin;
+}
+
+/**
+ * Delete an administrator
+ */
+export async function deleteAdminUser(adminId: string): Promise<void> {
+  const localList = getLocalAdmins();
+  
+  // Guard: Never delete the last super admin
+  const activeSuperAdmins = localList.filter((a) => a.role === 'super_admin' && a.status === 'active' && a.id !== adminId);
+  const target = localList.find((a) => a.id === adminId);
+  if (target?.role === 'super_admin' && activeSuperAdmins.length === 0) {
+    throw new Error('Impossible de supprimer le dernier Super Administrateur actif du système DNTT.');
+  }
+
+  // 1. Remove from local cache
+  const filtered = localList.filter((a) => a.id !== adminId);
+  setLocalAdmins(filtered);
+
+  // If deleted current session, clear session
+  const activeSession = getActiveAdminSession();
+  if (activeSession && activeSession.id === adminId) {
+    setActiveAdminSession(null);
+  }
+
+  // 2. Delete from Firestore if online
+  if (isOnline() && !isQuotaExceededFlag) {
+    try {
+      await deleteDoc(doc(db, ADMINS_COLLECTION, adminId));
+    } catch (e: any) {
+      if (isResourceExhaustedError(e)) {
+        setFirestoreQuotaExceeded(true);
+      }
+      console.warn('Suppression Firestore échouée:', e.message);
+    }
+  }
+}
+
+/**
+ * Authenticate admin with code 00223 or custom passcode / matricule
+ */
+export async function authenticateAdmin(
+  identifierOrPasscode: string,
+  passcode?: string
+): Promise<{ success: boolean; admin?: AdminUser; error?: string }> {
+  // Refresh admins list
+  const admins = await fetchAllAdmins();
+
+  const trimmedInput = identifierOrPasscode.trim();
+  const trimmedPass = (passcode || '').trim();
+
+  // Case 1: Direct Master Code 00223 entered in quick unlock
+  if (trimmedInput === '00223' && (!trimmedPass || trimmedPass === '00223')) {
+    // Find active super_admin or default master
+    const masterAdmin = admins.find((a) => a.role === 'super_admin' && a.status === 'active') || admins[0];
+    if (masterAdmin) {
+      const updatedAdmin: AdminUser = {
+        ...masterAdmin,
+        lastLoginAt: new Date().toISOString(),
+      };
+      await saveAdminUser(updatedAdmin);
+      setActiveAdminSession(updatedAdmin);
+      return { success: true, admin: updatedAdmin };
+    }
+  }
+
+  // Case 2: Identifier + Passcode provided
+  if (trimmedPass) {
+    const found = admins.find(
+      (a) =>
+        (a.username.toLowerCase() === trimmedInput.toLowerCase() ||
+         a.phone.replace(/\s+/g, '') === trimmedInput.replace(/\s+/g, '') ||
+         a.id.toLowerCase() === trimmedInput.toLowerCase()) &&
+        (a.passcode === trimmedPass || trimmedPass === '00223')
+    );
+
+    if (!found) {
+      return { success: false, error: 'Identifiant ou code PIN incorrect.' };
+    }
+
+    if (found.status === 'inactive') {
+      return { success: false, error: 'Ce compte administrateur est désactivé. Veuillez contacter le Super Administrateur.' };
+    }
+
+    const updatedAdmin: AdminUser = {
+      ...found,
+      lastLoginAt: new Date().toISOString(),
+    };
+    await saveAdminUser(updatedAdmin);
+    setActiveAdminSession(updatedAdmin);
+    return { success: true, admin: updatedAdmin };
+  }
+
+  // Case 3: Single input matching any admin's passcode or master code
+  const matchByPass = admins.find((a) => (a.passcode === trimmedInput || trimmedInput === '00223') && a.status === 'active');
+  if (matchByPass) {
+    const updatedAdmin: AdminUser = {
+      ...matchByPass,
+      lastLoginAt: new Date().toISOString(),
+    };
+    await saveAdminUser(updatedAdmin);
+    setActiveAdminSession(updatedAdmin);
+    return { success: true, admin: updatedAdmin };
+  }
+
+  return { success: false, error: 'Identifiants ou code de sécurité DNTT incorrects.' };
+}
+

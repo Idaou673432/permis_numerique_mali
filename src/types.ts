@@ -117,3 +117,20 @@ export interface OfflineActivityLog {
   details?: string;
   syncStatus: 'local_stored' | 'synced';
 }
+
+export type AdminRole = 'super_admin' | 'agent_dntt' | 'controleur_regional';
+
+export interface AdminUser {
+  id: string;
+  username: string; // Identifiant / Matricule
+  fullName: string;
+  role: AdminRole;
+  phone: string; // Ex: +223 70 12 34 56
+  passcode: string; // Code d'accès (ex: 00223)
+  agency: string; // Ex: DNTT Siège Bamako
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+}
+

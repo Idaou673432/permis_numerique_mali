@@ -24,13 +24,15 @@ import {
 interface CitizenGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenInstall?: () => void;
 }
 
 export const CitizenGuideModal: React.FC<CitizenGuideModalProps> = ({
   isOpen,
   onClose,
+  onOpenInstall,
 }) => {
-  const [activeSection, setActiveSection] = useState<'control' | 'points' | 'categories' | 'payment' | 'emergency'>('control');
+  const [activeSection, setActiveSection] = useState<'control' | 'points' | 'categories' | 'payment' | 'emergency' | 'install'>('control');
 
   if (!isOpen) return null;
 
@@ -127,6 +129,18 @@ export const CitizenGuideModal: React.FC<CitizenGuideModalProps> = ({
           >
             <Phone className="w-3.5 h-3.5 text-rose-600" />
             <span>Numéros d'Urgence</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection('install')}
+            className={`px-3 py-1.5 rounded-xl font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
+              activeSection === 'install'
+                ? 'bg-white text-emerald-950 shadow-xs font-bold border border-emerald-300'
+                : 'text-emerald-700 hover:text-emerald-900 bg-emerald-50/60'
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5 text-[#008543]" />
+            <span>Installer l'App</span>
           </button>
         </div>
 
@@ -388,6 +402,50 @@ export const CitizenGuideModal: React.FC<CitizenGuideModalProps> = ({
                 </a>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Section 6: Installer sur Téléphone */}
+        {activeSection === 'install' && (
+          <div className="space-y-3.5 text-xs text-slate-700 max-h-[50vh] overflow-y-auto pr-1">
+            <div className="bg-emerald-50/80 border border-emerald-200 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
+                <Smartphone className="w-4 h-4 text-[#008543]" />
+                <h4>Comment installer le Permis Numérique sur mon smartphone ?</h4>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                Le Permis Numérique Mali est une <strong>Application Web Progressive (PWA)</strong> officielle. Elle s'installe directement depuis votre navigateur sans avoir besoin d'un compte sur le Google Play Store ou l'App Store.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <strong className="text-slate-900 block font-bold">Sur Android (Chrome, Samsung Internet, Edge) :</strong>
+                <p className="text-slate-600 text-[11px]">
+                  Cliquez sur le bouton vert <strong>« Installer l'App »</strong> en haut de l'écran ou dans le menu de votre navigateur (<strong>⋮</strong>) puis sélectionnez <em>« Installer l'application »</em>.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <strong className="text-slate-900 block font-bold">Sur iPhone & iPad (Safari) :</strong>
+                <p className="text-slate-600 text-[11px]">
+                  Appuyez sur l'icône de partage <strong>⎋</strong> en bas de Safari, puis faites défiler et sélectionnez <strong>« Sur l'écran d'accueil » ➕</strong>.
+                </p>
+              </div>
+            </div>
+
+            {onOpenInstall && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenInstall();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#008543] hover:bg-emerald-800 text-white rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Ouvrir l'Assistant d'Installation</span>
+              </button>
+            )}
           </div>
         )}
 

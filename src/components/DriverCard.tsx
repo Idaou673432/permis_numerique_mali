@@ -6,6 +6,8 @@ import { updateViolationPaymentStatus } from '../lib/firebase';
 import { exportDriverLicenseToPDF } from '../lib/pdfExport';
 import { FinePaymentModal } from './FinePaymentModal';
 import { CitizenGuideModal } from './CitizenGuideModal';
+import { InstallAppModal } from './InstallAppModal';
+import { UpdatePhotoModal } from './UpdatePhotoModal';
 import {
   ShieldCheck,
   QrCode,
@@ -39,6 +41,7 @@ import {
   HelpCircle,
   FileDown,
   Loader2,
+  Camera,
 } from 'lucide-react';
 
 interface DriverCardProps {
@@ -48,6 +51,7 @@ interface DriverCardProps {
   driverViolations: Violation[];
   isOnline: boolean;
   onRefreshViolations?: () => void;
+  onRefreshLicenses?: () => void;
 }
 
 export const DriverCard: React.FC<DriverCardProps> = ({
@@ -57,6 +61,7 @@ export const DriverCard: React.FC<DriverCardProps> = ({
   driverViolations,
   isOnline,
   onRefreshViolations,
+  onRefreshLicenses,
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [qrString, setQrString] = useState<string>('');
@@ -71,6 +76,8 @@ export const DriverCard: React.FC<DriverCardProps> = ({
   const [paymentSuccessToast, setPaymentSuccessToast] = useState<string | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [pdfSuccessToast, setPdfSuccessToast] = useState<string | null>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showUpdatePhotoModal, setShowUpdatePhotoModal] = useState(false);
 
   // Filter licenses by licenseNumber, nina, fullName, or nif
   const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -561,16 +568,36 @@ export const DriverCard: React.FC<DriverCardProps> = ({
                 
                 {/* Photo & Biometric Box */}
                 <div className="col-span-4 flex flex-col items-center">
-                  <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100">
-                    <img
-                      src={license.photoUrl}
-                      alt={license.fullName}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
+                  <div
+                    onClick={() => setShowUpdatePhotoModal(true)}
+                    className="group cursor-pointer relative w-24 h-32 sm:w-28 sm:h-36 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center transition-all hover:border-emerald-500 hover:shadow-md"
+                    title="Cliquer pour changer ou ajouter votre photo d'identité"
+                  >
+                    {license.photoUrl ? (
+                      <img
+                        src={license.photoUrl}
+                        alt={license.fullName}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center p-2 text-slate-400">
+                        <User className="w-10 h-10 stroke-1 text-slate-400" />
+                        <span className="text-[8px] font-bold mt-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          + Ajouter photo
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Hover overlay hint */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold transition-opacity">
+                      <Camera className="w-4 h-4 mb-0.5" />
+                      <span>Modifier</span>
+                    </div>
+
                     {/* Hologram Overlay Simulation */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-400/10 to-emerald-400/10 opacity-60 pointer-events-none"></div>
-                    <div className="absolute bottom-1 right-1 bg-[#008543] text-yellow-300 text-[8px] font-bold px-1.5 py-0.5 rounded">
+                    <div className="absolute bottom-1 right-1 bg-[#008543] text-yellow-300 text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                       DNTT
                     </div>
                   </div>
@@ -829,6 +856,24 @@ export const DriverCard: React.FC<DriverCardProps> = ({
               >
                 <HelpCircle className="w-4 h-4 text-[#008543]" />
                 <span>Guide Citoyen & FAQ</span>
+              </button>
+
+              <button
+                id="btn-open-install-modal-card"
+                onClick={() => setShowInstallModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4 text-emerald-200" />
+                <span>Installer sur mon Téléphone</span>
+              </button>
+
+              <button
+                id="btn-update-photo-card"
+                onClick={() => setShowUpdatePhotoModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 shadow-xs transition cursor-pointer"
+              >
+                <Camera className="w-4 h-4 text-[#008543]" />
+                <span>{license.photoUrl ? 'Changer ma Photo' : 'Ajouter ma Photo'}</span>
               </button>
 
               <button
@@ -1318,6 +1363,26 @@ export const DriverCard: React.FC<DriverCardProps> = ({
       <CitizenGuideModal
         isOpen={showGuideModal}
         onClose={() => setShowGuideModal(false)}
+        onOpenInstall={() => setShowInstallModal(true)}
+      />
+
+      {/* INSTALL APP MODAL */}
+      <InstallAppModal
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+      />
+
+      {/* UPDATE PHOTO MODAL */}
+      <UpdatePhotoModal
+        isOpen={showUpdatePhotoModal}
+        onClose={() => setShowUpdatePhotoModal(false)}
+        license={license}
+        onPhotoUpdated={(updatedLic) => {
+          onSelectLicense(updatedLic);
+          if (onRefreshLicenses) {
+            onRefreshLicenses();
+          }
+        }}
       />
 
     </div>

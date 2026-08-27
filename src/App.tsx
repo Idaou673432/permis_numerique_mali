@@ -21,6 +21,8 @@ import { OfficerScanner } from './components/OfficerScanner';
 import { AdminPortal } from './components/AdminPortal';
 import { AuthModal } from './components/AuthModal';
 import { CitizenGuideModal } from './components/CitizenGuideModal';
+import { InstallAppModal } from './components/InstallAppModal';
+import { InstallPwaBanner } from './components/InstallPwaBanner';
 import {
   QrCode,
   ScanLine,
@@ -40,6 +42,7 @@ export default function App() {
   const [isQuotaExceeded, setIsQuotaExceeded] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>('mamadou.keita@citoyen.ml');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -111,6 +114,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-600 selection:text-white">
       
+      {/* Install PWA Banner */}
+      <InstallPwaBanner onOpenInstallModal={() => setIsInstallModalOpen(true)} />
+
       {/* Official Header */}
       <Header
         currentRole={currentRole}
@@ -121,6 +127,7 @@ export default function App() {
         pendingViolationsCount={pendingViolationsCount}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenGuide={() => setIsGuideOpen(true)}
+        onOpenInstall={() => setIsInstallModalOpen(true)}
         currentUserEmail={currentUserEmail}
       />
 
@@ -179,6 +186,7 @@ export default function App() {
                 driverViolations={currentDriverViolations}
                 isOnline={isOnline}
                 onRefreshViolations={loadAppData}
+                onRefreshLicenses={loadAppData}
               />
             )}
 
@@ -264,6 +272,13 @@ export default function App() {
       <CitizenGuideModal
         isOpen={isGuideOpen}
         onClose={() => setIsGuideOpen(false)}
+        onOpenInstall={() => setIsInstallModalOpen(true)}
+      />
+
+      {/* PWA Mobile App Installation Modal */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
       />
 
     </div>

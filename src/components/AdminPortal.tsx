@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { DriverLicense, LicenseCategory, LicenseStatus, Violation, DNTTKeyPair } from '../types';
-import { saveDriverLicense, updateLicenseStatus, deleteLicense, deleteViolation } from '../lib/firebase';
+import { DriverLicense, LicenseCategory, LicenseStatus, Violation, DNTTKeyPair, AdminUser } from '../types';
+import { saveDriverLicense, updateLicenseStatus, deleteLicense, deleteViolation, getActiveAdminSession, setActiveAdminSession } from '../lib/firebase';
 import { generateDNTTKeyPair, DNTT_KEY_FINGERPRINT, DEFAULT_DNTT_PUBLIC_KEY_JWK, DEFAULT_DNTT_PRIVATE_KEY_JWK, signData, verifySignature } from '../lib/crypto';
 import { MALIAN_REGIONS, CATEGORY_DESCRIPTIONS } from '../data/seedData';
+import { PhotoUploader } from './PhotoUploader';
+import { AdminAuthGate } from './AdminAuthGate';
+import { AdminManagementTab } from './AdminManagementTab';
 import {
   Building2,
   PlusCircle,
@@ -29,6 +32,9 @@ import {
   Upload,
   Camera,
   Image as ImageIcon,
+  LogOut,
+  UserCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -45,7 +51,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   onRefresh,
   isOnline,
 }) => {
-  const [activeTab, setActiveTab] = useState<'directory' | 'issue' | 'crypto' | 'violations'>('directory');
+  // Admin Session State (Authenticated with 00223 or custom credentials)
+  const [activeAdmin, setActiveAdmin] = useState<AdminUser | null>(() => getActiveAdminSession());
+
+  const [activeTab, setActiveTab] = useState<'directory' | 'issue' | 'crypto' | 'violations' | 'admins'>('directory');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedLicenseForQR, setSelectedLicenseForQR] = useState<DriverLicense | null>(null);
@@ -76,7 +85,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [newCity, setNewCity] = useState('Bamako');
   const [newRegion, setNewRegion] = useState(MALIAN_REGIONS[0]);
   const [newCategories, setNewCategories] = useState<LicenseCategory[]>(['B']);
-  const [newPhotoUrl, setNewPhotoUrl] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face');
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [newRestrictions, setNewRestrictions] = useState('Aucune restriction');
   const [isIssuing, setIsIssuing] = useState(false);
   const [issueSuccessMessage, setIssueSuccessMessage] = useState<string | null>(null);
@@ -351,6 +360,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       setNewFullName('');
       setNewNina('');
       setNewNif('');
+      setNewPhotoUrl('');
       setCustomLicenseNumber('');
     } catch (error: any) {
       alert('Erreur lors de la génération du permis: ' + error.message);
@@ -386,22 +396,46 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
+  const handleLogoutAdmin = () => {
+    setActiveAdminSession(null);
+    setActiveAdmin(null);
+    setActionFeedback({
+      type: 'info',
+      message: 'Session administrateur verrouillée avec succès.',
+    });
+  };
+
+  // IF NOT AUTHENTICATED: DISPLAY DNTT SECURITY GATE (CODE 00223)
+  if (!activeAdmin) {
+    return (
+      <AdminAuthGate
+        onAuthenticated={(admin) => {
+          setActiveAdmin(admin);
+          setActionFeedback({
+            type: 'success',
+            message: `Bienvenue, ${admin.fullName} (${admin.role === 'super_admin' ? 'Super Administrateur' : 'Agent DNTT'}). Session sécurisée active.`,
+          });
+        }}
+      />
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       
-      {/* Admin Executive Header */}
+      {/* Admin Executive Header with Session Card */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 text-slate-900 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#008543] flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#008543] flex items-center justify-center font-bold shrink-0">
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">
                 DIRECTION NATIONALE DES TRANSPORTS TERRESTRES
               </h2>
               <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200">
-                PORTAIL DNTT
+                PORTAIL SÉCURISÉ DNTT
               </span>
             </div>
             <p className="text-xs text-slate-500">
@@ -410,26 +444,59 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           </div>
         </div>
 
-        {/* Global Stats Counter */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
-          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-center">
-            <span className="text-[10px] text-slate-500 block font-semibold">Total Titres</span>
-            <span className="text-sm font-bold text-slate-900 font-mono">{totalLicenses}</span>
+        {/* Logged in Admin Session Banner & Logout */}
+        <div className="flex flex-wrap items-center gap-2.5 bg-slate-50 border border-slate-200 p-2.5 rounded-2xl w-full md:w-auto justify-between md:justify-end">
+          <div className="flex items-center gap-2 text-left">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#008543] flex items-center justify-center font-bold text-xs">
+              <UserCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-900 truncate max-w-[160px]">
+                  {activeAdmin.fullName}
+                </span>
+                <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">
+                  {activeAdmin.role === 'super_admin' ? 'Super Admin' : activeAdmin.role === 'agent_dntt' ? 'Agent DNTT' : 'Contrôleur'}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500 block truncate max-w-[200px]">
+                {activeAdmin.agency}
+              </span>
+            </div>
           </div>
-          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-center">
-            <span className="text-[10px] text-[#008543] block font-semibold">Actifs</span>
-            <span className="text-sm font-bold text-[#008543] font-mono">{activeLicenses}</span>
-          </div>
-          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-center">
-            <span className="text-[10px] text-amber-700 block font-semibold">Suspendus</span>
-            <span className="text-sm font-bold text-amber-700 font-mono">{suspendedLicenses}</span>
-          </div>
-          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 text-center">
-            <span className="text-[10px] text-slate-600 block font-semibold">Amendes</span>
-            <span className="text-sm font-bold text-slate-900 font-mono">
-              {(totalFinesFCFA / 1000).toFixed(0)}k FCFA
-            </span>
-          </div>
+
+          <button
+            type="button"
+            id="btn-logout-admin"
+            onClick={handleLogoutAdmin}
+            className="p-2 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            title="Se déconnecter de la session administrateur"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline text-[11px]">Déconnexion</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Global Stats Counter */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center shadow-xs">
+          <span className="text-[10px] text-slate-500 block font-semibold">Total Titres</span>
+          <span className="text-base font-bold text-slate-900 font-mono">{totalLicenses}</span>
+        </div>
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center shadow-xs">
+          <span className="text-[10px] text-[#008543] block font-semibold">Actifs</span>
+          <span className="text-base font-bold text-[#008543] font-mono">{activeLicenses}</span>
+        </div>
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center shadow-xs">
+          <span className="text-[10px] text-amber-700 block font-semibold">Suspendus</span>
+          <span className="text-base font-bold text-amber-700 font-mono">{suspendedLicenses}</span>
+        </div>
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center shadow-xs">
+          <span className="text-[10px] text-slate-600 block font-semibold">Amendes Total</span>
+          <span className="text-base font-bold text-slate-900 font-mono">
+            {(totalFinesFCFA / 1000).toFixed(0)}k FCFA
+          </span>
         </div>
       </div>
 
@@ -464,7 +531,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         <button
           id="admin-tab-directory"
           onClick={() => setActiveTab('directory')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
             activeTab === 'directory'
               ? 'bg-[#008543] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -477,33 +544,46 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         <button
           id="admin-tab-issue"
           onClick={() => setActiveTab('issue')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
             activeTab === 'issue'
               ? 'bg-[#008543] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <PlusCircle className="w-4 h-4" />
-          <span>Délivrer un Permis (Signature ECDSA)</span>
+          <span>Délivrer un Permis</span>
+        </button>
+
+        <button
+          id="admin-tab-admins"
+          onClick={() => setActiveTab('admins')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
+            activeTab === 'admins'
+              ? 'bg-[#008543] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-amber-400" />
+          <span>Gestion des Administrateurs</span>
         </button>
 
         <button
           id="admin-tab-crypto"
           onClick={() => setActiveTab('crypto')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
             activeTab === 'crypto'
               ? 'bg-[#008543] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <KeyRound className="w-4 h-4" />
-          <span>Clés Cryptographiques & Sécurité</span>
+          <span>Clés Cryptographiques</span>
         </button>
 
         <button
           id="admin-tab-violations"
           onClick={() => setActiveTab('violations')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition shrink-0 ${
             activeTab === 'violations'
               ? 'bg-[#008543] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -899,65 +979,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 />
               </div>
 
-              {/* Photo Input (Upload, Presets or URL) */}
-              <div className="sm:col-span-2 md:col-span-3 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <label className="block text-slate-800 font-bold text-xs flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-[#008543]" />
-                    Photo d'identité du Titulaire (Téléverser ou Sélectionner) *
-                  </label>
-                  <label className="cursor-pointer px-3 py-1 bg-[#008543] hover:bg-[#007038] text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-xs">
-                    <Upload className="w-3 h-3" />
-                    <span>Choisir une photo (Fichier local)</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handlePhotoFileUpload(e, setNewPhotoUrl)}
-                    />
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="relative w-14 h-16 rounded-xl overflow-hidden border border-slate-300 shrink-0 bg-slate-200 shadow-xs">
-                    <img
-                      src={newPhotoUrl}
-                      alt="Aperçu photo"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="flex-1 space-y-1.5">
-                    <input
-                      type="text"
-                      value={newPhotoUrl}
-                      onChange={(e) => setNewPhotoUrl(e.target.value)}
-                      placeholder="Ou collez directement une URL d'image (ex: https://...)"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-slate-900 text-[11px] focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
-                    
-                    {/* Quick photo avatars */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-                      <span className="text-[10px] text-slate-500 font-medium">Exemples :</span>
-                      {[
-                        { label: 'Homme 1', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face' },
-                        { label: 'Femme 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face' },
-                        { label: 'Homme 2', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face' },
-                        { label: 'Femme 2', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop&crop=face' },
-                      ].map((preset) => (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => setNewPhotoUrl(preset.url)}
-                          className="px-2 py-0.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] text-slate-600 hover:text-slate-900 transition shrink-0"
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              {/* Photo Input (Upload or Live Camera) */}
+              <div className="sm:col-span-2 md:col-span-3">
+                <PhotoUploader
+                  photoUrl={newPhotoUrl}
+                  onChange={setNewPhotoUrl}
+                  label="Photo d'identité du Titulaire (Téléverser un fichier ou Prendre une photo)"
+                />
               </div>
 
             </div>
@@ -1199,6 +1227,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         </div>
       )}
 
+      {/* TAB: GESTION DES ADMINISTRATEURS (CRUD & CODE 00223) */}
+      {activeTab === 'admins' && (
+        <AdminManagementTab
+          currentAdmin={activeAdmin}
+          onAdminUpdated={onRefresh}
+        />
+      )}
+
       {/* QR MODAL FROM DIRECTORY */}
       {selectedLicenseForQR && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1271,72 +1307,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             <form onSubmit={handleSaveEditedLicense} className="space-y-4 text-xs">
               
               {/* SECTION 1: PHOTO MANAGEMENT */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <label className="block text-slate-800 font-bold text-xs flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-[#008543]" />
-                    Photo d'identité du Titulaire (Changer la photo)
-                  </label>
-                  
-                  {/* File Upload Button */}
-                  <label className="cursor-pointer px-3 py-1.5 bg-[#008543] hover:bg-[#007038] text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-xs">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Téléverser une photo (Fichier local)</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handlePhotoFileUpload(e, setEditPhotoUrl)}
-                    />
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-2xl overflow-hidden border-2 border-slate-300 shrink-0 bg-slate-200 shadow-sm">
-                    <img
-                      src={editPhotoUrl || editingLicense.photoUrl}
-                      alt={editingLicense.fullName}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-1 py-0.5 rounded font-mono">
-                      Aperçu
-                    </div>
-                  </div>
-
-                  <div className="flex-1 space-y-2">
-                    <label className="block text-slate-600 font-semibold text-[11px]">
-                      Ou saisissez / collez une URL d'image :
-                    </label>
-                    <input
-                      type="text"
-                      value={editPhotoUrl}
-                      onChange={(e) => setEditPhotoUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 text-xs focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
-                    />
-
-                    {/* Presets */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-                      <span className="text-[10px] text-slate-500 font-semibold">Exemples :</span>
-                      {[
-                        { label: 'Homme 1', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face' },
-                        { label: 'Femme 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face' },
-                        { label: 'Homme 2', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face' },
-                        { label: 'Femme 2', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop&crop=face' },
-                      ].map((preset) => (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => setEditPhotoUrl(preset.url)}
-                          className="px-2 py-0.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] text-slate-700 transition shrink-0 font-medium"
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                <PhotoUploader
+                  photoUrl={editPhotoUrl}
+                  onChange={setEditPhotoUrl}
+                  label="Photo d'identité du Titulaire (Modifier la photo / Téléverser / Caméra)"
+                />
               </div>
 
               {/* SECTION 2: CATEGORY MANAGEMENT (ADD / REMOVE / MODIFY) */}

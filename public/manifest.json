@@ -1,0 +1,53 @@
+{
+  "name": "Permis Numérique Mali - DNTT",
+  "short_name": "Permis Mali",
+  "description": "Application officielle et sécurisée du Permis de Conduire Numérique de la République du Mali (DNTT) avec vérification cryptographique 100% hors-ligne.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
+  "orientation": "portrait-primary",
+  "background_color": "#F8FAFC",
+  "theme_color": "#008543",
+  "categories": ["government", "productivity", "utilities"],
+  "lang": "fr",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mon Permis & QR Code",
+      "short_name": "Mon Permis",
+      "description": "Afficher le QR code sécurisé pour le contrôle routier",
+      "url": "/?view=driver",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Contrôle Police / Gendarmerie",
+      "short_name": "Contrôle",
+      "description": "Scanner et vérifier un permis hors-ligne",
+      "url": "/?view=officer",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Payer une Amende",
+      "short_name": "Paiement",
+      "description": "Régler une amende par Orange Money ou Moov Money",
+      "url": "/?view=payment",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}

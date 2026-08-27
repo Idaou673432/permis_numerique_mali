@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { Shield, QrCode, ScanLine, Building2, Wifi, WifiOff, RefreshCw, UserCheck, HelpCircle } from 'lucide-react';
+import { Shield, QrCode, ScanLine, Building2, Wifi, WifiOff, RefreshCw, UserCheck, HelpCircle, Smartphone } from 'lucide-react';
 
 interface HeaderProps {
   currentRole: UserRole;
@@ -11,6 +11,7 @@ interface HeaderProps {
   pendingViolationsCount: number;
   onOpenAuth?: () => void;
   onOpenGuide?: () => void;
+  onOpenInstall?: () => void;
   currentUserEmail?: string | null;
 }
 
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   pendingViolationsCount,
   onOpenAuth,
   onOpenGuide,
+  onOpenInstall,
   currentUserEmail,
 }) => {
   return (
@@ -58,8 +60,20 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Network & Sync indicator on mobile + Guide button */}
+            {/* Mobile Actions: Install App + Guide + Network indicator */}
             <div className="flex items-center gap-1.5 sm:hidden">
+              {onOpenInstall && (
+                <button
+                  type="button"
+                  id="btn-mobile-install-app"
+                  onClick={onOpenInstall}
+                  title="Installer sur le téléphone"
+                  className="flex items-center gap-1 px-2 py-1 bg-[#008543] text-white rounded-lg text-[11px] font-bold shadow-xs transition cursor-pointer"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Installer</span>
+                </button>
+              )}
               {onOpenGuide && (
                 <button
                   type="button"
@@ -147,8 +161,21 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Desktop Right Actions: Guide, Network, Sync, Profile */}
+          {/* Desktop Right Actions: Install App, Guide, Network, Sync, Profile */}
           <div className="hidden sm:flex items-center gap-2">
+            {onOpenInstall && (
+              <button
+                type="button"
+                id="btn-header-install-app"
+                onClick={onOpenInstall}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#008543] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                title="Installer sur le téléphone ou le PC"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Installer l'App</span>
+              </button>
+            )}
+
             {onOpenGuide && (
               <button
                 type="button"
@@ -217,3 +244,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

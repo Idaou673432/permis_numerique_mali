@@ -134,7 +134,7 @@ export const SEED_LICENSES: DriverLicense[] = [
     categories: ['A', 'B', 'C'],
     issuingAuthority: 'Direction Nationale des Transports Terrestres (DNTT)',
     status: 'active',
-    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face',
+    photoUrl: '',
     points: 12,
     restrictions: 'Port de verres correcteurs obligatoire (Code 01)',
     emergencyContact: {
@@ -162,7 +162,7 @@ export const SEED_LICENSES: DriverLicense[] = [
     categories: ['A1', 'B'],
     issuingAuthority: 'Direction Régionale des Transports de Sikasso',
     status: 'active',
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face',
+    photoUrl: '',
     points: 11,
     restrictions: 'Aucune',
     emergencyContact: {
@@ -190,7 +190,7 @@ export const SEED_LICENSES: DriverLicense[] = [
     categories: ['B', 'C', 'D', 'E'],
     issuingAuthority: 'Direction Régionale des Transports de Ségou',
     status: 'active',
-    photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face',
+    photoUrl: '',
     points: 9,
     restrictions: 'Véhicules lourds & transport en commun',
     emergencyContact: {
@@ -218,7 +218,7 @@ export const SEED_LICENSES: DriverLicense[] = [
     categories: ['B'],
     issuingAuthority: 'Direction Régionale des Transports de Kayes',
     status: 'expired',
-    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop&crop=face',
+    photoUrl: '',
     points: 12,
     restrictions: 'Permis expiré - À renouveler',
     createdAt: '2019-01-10T11:00:00.000Z',
@@ -241,7 +241,7 @@ export const SEED_LICENSES: DriverLicense[] = [
     categories: ['A', 'B'],
     issuingAuthority: 'Direction Nationale des Transports Terrestres (DNTT)',
     status: 'suspended',
-    photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=300&fit=crop&crop=face',
+    photoUrl: '',
     points: 0,
     restrictions: 'Suspension administrative 6 mois (Décision DNTT N°2024-082)',
     createdAt: '2022-05-20T14:00:00.000Z',
@@ -278,3 +278,40 @@ export const CATEGORY_DESCRIPTIONS: Record<string, { label: string; vehicle: str
   D: { label: 'Transport en commun', vehicle: 'Autobus / Minibus > 8 places', age: 21 },
   E: { label: 'Ensembles de véhicules', vehicle: 'Remorques & semi-remorques > 750 kg', age: 21 },
 };
+
+export const DEFAULT_ADMINS: import('../types').AdminUser[] = [
+  {
+    id: 'admin-dntt-master',
+    username: 'admin',
+    fullName: 'Directeur National DNTT',
+    role: 'super_admin',
+    phone: '+223 70 00 22 33',
+    passcode: '00223',
+    agency: 'Direction Nationale des Transports Terrestres - Bamako',
+    status: 'active',
+    createdAt: '2024-01-01T08:00:00.000Z',
+  },
+  {
+    id: 'admin-dntt-sikasso',
+    username: 'agent_sikasso',
+    fullName: 'Chef Division Titres Sikasso',
+    role: 'agent_dntt',
+    phone: '+223 76 11 22 33',
+    passcode: '00223',
+    agency: 'Direction Régionale des Transports de Sikasso',
+    status: 'active',
+    createdAt: '2024-02-15T09:30:00.000Z',
+  },
+  {
+    id: 'admin-dntt-segou',
+    username: 'inspecteur_segou',
+    fullName: 'Inspecteur Régional Ségou',
+    role: 'controleur_regional',
+    phone: '+223 66 99 88 77',
+    passcode: '00223',
+    agency: 'Direction Régionale des Transports de Ségou',
+    status: 'active',
+    createdAt: '2024-03-10T11:00:00.000Z',
+  },
+];
+

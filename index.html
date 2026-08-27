@@ -2,15 +2,29 @@
 <html lang="fr" class="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Permis Numérique Mali - DNTT</title>
-    <meta name="description" content="Application sécurisée de permis de conduire numérique pour la République du Mali (DNTT) avec signature cryptographique ECDSA et contrôle hors-ligne." />
+    <meta name="description" content="Application officielle et sécurisée du Permis de Conduire Numérique de la République du Mali (DNTT) avec signature cryptographique ECDSA et contrôle hors-ligne." />
     <meta name="theme-color" content="#008543" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Permis Mali" />
+    <meta name="application-name" content="Permis Numérique Mali" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+
+    <!-- Open Graph -->
     <meta property="og:title" content="Permis Numérique Mali - DNTT" />
     <meta property="og:description" content="Titre de conduite biométrique et contrôle routier sécurisé hors-ligne pour la République du Mali." />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon.svg" />
   </head>
-  <body class="bg-slate-50 text-slate-800 antialiased font-sans">
+  <body class="bg-slate-50 text-slate-800 antialiased font-sans select-none sm:select-auto">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
