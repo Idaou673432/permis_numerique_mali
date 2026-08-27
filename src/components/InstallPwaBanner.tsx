@@ -43,8 +43,12 @@ export const InstallPwaBanner: React.FC<InstallPwaBannerProps> = ({ onOpenInstal
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="w-8 h-8 rounded-xl bg-[#008543] text-white flex items-center justify-center shrink-0 border border-emerald-400/30 shadow-inner">
-            <Smartphone className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 flex items-center justify-center shrink-0 border border-emerald-400/40 shadow-inner">
+            <img
+              src="/app_launch_cover.jpg"
+              alt="Permis Mali Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="text-left">
             <p className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">

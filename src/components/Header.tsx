@@ -48,8 +48,12 @@ export const Header: React.FC<HeaderProps> = ({
               className={`flex items-center gap-3 ${onShowCover ? 'cursor-pointer group' : ''}`}
               title={onShowCover ? "Cliquer pour revoir l'animation de lancement PERMIS MALI" : undefined}
             >
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#008543] group-hover:scale-105 group-hover:bg-emerald-100 transition">
-                <Shield className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-emerald-500/30 flex items-center justify-center bg-slate-900 group-hover:scale-105 group-hover:border-emerald-400 transition shadow-xs">
+                <img
+                  src="/app_launch_cover.jpg"
+                  alt="Permis Mali Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">

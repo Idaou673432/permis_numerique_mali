@@ -226,13 +226,19 @@ export default function App() {
           
           <button
             onClick={() => setCurrentRole('driver')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-xl transition ${
+            className={`flex flex-col items-center justify-center py-1 rounded-xl transition ${
               currentRole === 'driver'
                 ? 'text-[#008543] font-bold'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <QrCode className="w-5 h-5 mb-0.5" />
+            <div className={`w-6 h-6 rounded-full overflow-hidden mb-0.5 border ${currentRole === 'driver' ? 'border-[#008543] ring-2 ring-emerald-500/30' : 'border-slate-300 opacity-70'}`}>
+              <img
+                src="/app_launch_cover.jpg"
+                alt="Conducteur Permis"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <span className="text-[10px]">Conducteur</span>
           </button>
 

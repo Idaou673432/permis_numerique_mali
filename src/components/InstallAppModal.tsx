@@ -52,8 +52,12 @@ export const InstallAppModal: React.FC<InstallAppModalProps> = ({ isOpen, onClos
         {/* Modal Header */}
         <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between bg-radial from-emerald-50/50 via-white to-white">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#008543] text-white flex items-center justify-center shadow-md shadow-emerald-700/20 shrink-0">
-              <Smartphone className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden border border-emerald-500/40 shadow-md shadow-emerald-700/20 shrink-0 bg-slate-900">
+              <img
+                src="/app_launch_cover.jpg"
+                alt="Permis Mali App Icon"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
