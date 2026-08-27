@@ -12,6 +12,7 @@ interface HeaderProps {
   onOpenAuth?: () => void;
   onOpenGuide?: () => void;
   onOpenInstall?: () => void;
+  onShowCover?: () => void;
   currentUserEmail?: string | null;
 }
 
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onOpenGuide,
   onOpenInstall,
+  onShowCover,
   currentUserEmail,
 }) => {
   return (
@@ -41,13 +43,17 @@ export const Header: React.FC<HeaderProps> = ({
           
           {/* Logo & Government Header */}
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#008543]">
+            <div
+              onClick={onShowCover}
+              className={`flex items-center gap-3 ${onShowCover ? 'cursor-pointer group' : ''}`}
+              title={onShowCover ? "Cliquer pour revoir l'animation de lancement PERMIS MALI" : undefined}
+            >
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#008543] group-hover:scale-105 group-hover:bg-emerald-100 transition">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm sm:text-base font-bold tracking-tight text-slate-900 flex items-center gap-1.5">
+                  <h1 className="text-sm sm:text-base font-bold tracking-tight text-slate-900 flex items-center gap-1.5 group-hover:text-[#008543] transition">
                     PERMIS NUMÉRIQUE <span className="text-[#008543]">MALI</span>
                   </h1>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
@@ -113,8 +119,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Role Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto justify-center">
+          {/* Role Navigation Tabs (Desktop only; on mobile the bottom navigation bar is used) */}
+          <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 justify-center">
             <button
               id="tab-driver-portal"
               onClick={() => onSelectRole('driver')}

@@ -27,6 +27,22 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/app_launch_cover.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Écran de lancement Permis Mali DNTT"
+    },
+    {
+      "src": "/app_launch_cover.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Écran d'accueil sur mobile"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Mon Permis & QR Code",

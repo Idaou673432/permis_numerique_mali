@@ -23,6 +23,7 @@ import { AuthModal } from './components/AuthModal';
 import { CitizenGuideModal } from './components/CitizenGuideModal';
 import { InstallAppModal } from './components/InstallAppModal';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
+import { AppSplashScreen } from './components/AppSplashScreen';
 import {
   QrCode,
   ScanLine,
@@ -45,6 +46,7 @@ export default function App() {
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>('mamadou.keita@citoyen.ml');
   const [isLoading, setIsLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   // Network Connectivity & Quota Listeners
   useEffect(() => {
@@ -114,6 +116,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-600 selection:text-white">
       
+      {/* Animated Cover Splash Screen on App Launch */}
+      {showSplash && (
+        <AppSplashScreen onComplete={() => setShowSplash(false)} />
+      )}
+
       {/* Install PWA Banner */}
       <InstallPwaBanner onOpenInstallModal={() => setIsInstallModalOpen(true)} />
 
@@ -128,6 +135,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenGuide={() => setIsGuideOpen(true)}
         onOpenInstall={() => setIsInstallModalOpen(true)}
+        onShowCover={() => setShowSplash(true)}
         currentUserEmail={currentUserEmail}
       />
 
