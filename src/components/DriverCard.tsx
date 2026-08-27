@@ -526,293 +526,294 @@ export const DriverCard: React.FC<DriverCardProps> = ({
           </div>
 
           {/* 3D Flip Card Container */}
-          <div className="relative mx-auto w-full max-w-xl aspect-[1.586/1] min-h-[320px] sm:min-h-[360px] perspective-1000">
-            
-            {/* --- RECTO (FRONT OF CARD) --- */}
+          <div className="relative mx-auto w-full max-w-xl aspect-[1.586/1] min-h-[310px] sm:min-h-[340px] [perspective:1200px]">
+            {/* Flipping 3D Card Inner */}
             <div
-              className={`w-full h-full rounded-3xl p-5 sm:p-6 text-slate-900 shadow-md transition-all duration-700 transform-style-preserve-3d border border-slate-200 relative overflow-hidden bg-gradient-to-br from-emerald-50/60 via-amber-50/30 to-white ${
-                isFlipped ? 'rotate-y-180 opacity-0 pointer-events-none absolute inset-0' : 'relative opacity-100'
+              className={`w-full h-full relative transition-transform duration-700 [transform-style:preserve-3d] ${
+                isFlipped ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'
               }`}
             >
-              {/* Guilloché Security Pattern Background */}
+              {/* --- RECTO (FRONT OF CARD) --- */}
               <div
-                className="absolute inset-0 opacity-5 pointer-events-none"
-                style={{
-                  backgroundImage:
-                    'radial-gradient(#047857 1px, transparent 1px), radial-gradient(#d97706 1px, transparent 1px)',
-                  backgroundSize: '16px 16px',
-                  backgroundPosition: '0 0, 8px 8px',
-                }}
-              />
+                className="absolute inset-0 w-full h-full rounded-3xl p-4 sm:p-5 text-slate-900 shadow-md border border-slate-200 overflow-hidden bg-gradient-to-br from-emerald-50/60 via-amber-50/30 to-white [backface-visibility:hidden] flex flex-col justify-between"
+              >
+                {/* Guilloché Security Pattern Background */}
+                <div
+                  className="absolute inset-0 opacity-5 pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(#047857 1px, transparent 1px), radial-gradient(#d97706 1px, transparent 1px)',
+                    backgroundSize: '16px 16px',
+                    backgroundPosition: '0 0, 8px 8px',
+                  }}
+                />
 
-              {/* Top Flag & Header */}
-              <div className="relative z-10 border-b border-slate-200/80 pb-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#008543] text-yellow-300 flex items-center justify-center font-bold text-xs shadow-xs">
-                      ML
+                {/* Top Flag & Header */}
+                <div className="relative z-10 border-b border-slate-200/80 pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#008543] text-yellow-300 flex items-center justify-center font-bold text-xs shadow-xs">
+                        ML
+                      </div>
+                      <div>
+                        <h2 className="text-xs sm:text-sm font-bold tracking-wider text-slate-900 uppercase">
+                          RÉPUBLIQUE DU MALI
+                        </h2>
+                        <p className="text-[9px] text-emerald-800 font-semibold tracking-wide">
+                          PERMIS DE CONDUIRE NUMÉRIQUE • DRIVING LICENCE
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xs sm:text-sm font-bold tracking-wider text-slate-900 uppercase">
-                        RÉPUBLIQUE DU MALI
-                      </h2>
-                      <p className="text-[9px] text-emerald-800 font-semibold tracking-wide">
-                        PERMIS DE CONDUIRE NUMÉRIQUE • DRIVING LICENCE
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Mali National Flag Icon */}
-                  <div className="flex h-4 w-7 rounded overflow-hidden shadow-xs border border-slate-300">
-                    <div className="w-1/3 bg-[#008543]"></div>
-                    <div className="w-1/3 bg-[#FCD116]"></div>
-                    <div className="w-1/3 bg-[#CE1126]"></div>
+                    {/* Mali National Flag Icon */}
+                    <div className="flex h-4 w-7 rounded overflow-hidden shadow-xs border border-slate-300 shrink-0">
+                      <div className="w-1/3 bg-[#008543]"></div>
+                      <div className="w-1/3 bg-[#FCD116]"></div>
+                      <div className="w-1/3 bg-[#CE1126]"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Main Card Body */}
-              <div className="relative z-10 grid grid-cols-12 gap-3 mt-3.5">
-                
-                {/* Photo & Biometric Box */}
-                <div className="col-span-4 flex flex-col items-center">
-                  <div
-                    onClick={() => setShowUpdatePhotoModal(true)}
-                    className="group cursor-pointer relative w-24 h-32 sm:w-28 sm:h-36 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center transition-all hover:border-emerald-500 hover:shadow-md"
-                    title="Cliquer pour changer ou ajouter votre photo d'identité"
-                  >
-                    {license.photoUrl ? (
-                      <img
-                        src={license.photoUrl}
-                        alt={license.fullName}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-center p-2 text-slate-400">
-                        <User className="w-10 h-10 stroke-1 text-slate-400" />
-                        <span className="text-[8px] font-bold mt-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                          + Ajouter photo
+                {/* Main Card Body */}
+                <div className="relative z-10 grid grid-cols-12 gap-2.5 sm:gap-3 my-auto">
+                  
+                  {/* Photo & Biometric Box */}
+                  <div className="col-span-4 flex flex-col items-center">
+                    <div
+                      onClick={() => setShowUpdatePhotoModal(true)}
+                      className="group cursor-pointer relative w-20 h-28 sm:w-26 sm:h-34 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center transition-all hover:border-emerald-500 hover:shadow-md"
+                      title="Cliquer pour changer ou ajouter votre photo d'identité"
+                    >
+                      {license.photoUrl ? (
+                        <img
+                          src={license.photoUrl}
+                          alt={license.fullName}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center p-2 text-slate-400">
+                          <User className="w-8 h-8 stroke-1 text-slate-400" />
+                          <span className="text-[8px] font-bold mt-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            + Photo
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Hover overlay hint */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold transition-opacity">
+                        <Camera className="w-4 h-4 mb-0.5" />
+                        <span>Modifier</span>
+                      </div>
+
+                      {/* Hologram Overlay Simulation */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-400/10 to-emerald-400/10 opacity-60 pointer-events-none"></div>
+                      <div className="absolute bottom-1 right-1 bg-[#008543] text-yellow-300 text-[7px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                        DNTT
+                      </div>
+                    </div>
+
+                    <div className="mt-1 flex items-center gap-1">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                        GS: {license.bloodGroup}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Driver Identifiers & Details */}
+                  <div className="col-span-8 space-y-1 sm:space-y-1.5 text-left">
+                    
+                    {/* License Number */}
+                    <div>
+                      <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                        5. N° Titre de Conduite
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold text-[#008543] font-mono tracking-tight bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                        {license.licenseNumber}
+                      </span>
+                    </div>
+
+                    {/* Full Name */}
+                    <div>
+                      <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                        1. Nom & Prénoms
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-900 tracking-wide uppercase truncate block">
+                        {license.fullName}
+                      </span>
+                    </div>
+
+                    {/* Date & Place of birth */}
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                          2. Date de Naiss.
+                        </span>
+                        <span className="text-[10px] sm:text-[11px] font-semibold text-slate-800">
+                          {license.dateOfBirth}
                         </span>
                       </div>
-                    )}
-
-                    {/* Hover overlay hint */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold transition-opacity">
-                      <Camera className="w-4 h-4 mb-0.5" />
-                      <span>Modifier</span>
+                      <div>
+                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                          3. Lieu de Naiss.
+                        </span>
+                        <span className="text-[10px] sm:text-[11px] font-semibold text-slate-800 truncate block">
+                          {license.placeOfBirth}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Hologram Overlay Simulation */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-400/10 to-emerald-400/10 opacity-60 pointer-events-none"></div>
-                    <div className="absolute bottom-1 right-1 bg-[#008543] text-yellow-300 text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs">
-                      DNTT
-                    </div>
-                  </div>
-
-                  <div className="mt-1.5 flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                      GS: {license.bloodGroup}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Driver Identifiers & Details */}
-                <div className="col-span-8 space-y-1.5 text-left">
-                  
-                  {/* License Number */}
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                      5. N° Titre de Conduite
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-[#008543] font-mono tracking-tight bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
-                      {license.licenseNumber}
-                    </span>
-                  </div>
-
-                  {/* Full Name */}
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                      1. Nom & Prénoms
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-900 tracking-wide uppercase">
-                      {license.fullName}
-                    </span>
-                  </div>
-
-                  {/* Date & Place of birth */}
-                  <div className="grid grid-cols-2 gap-2">
+                    {/* NINA / NIF */}
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                        2. Date de Naiss.
+                      <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                        4. NINA (Identifiant National)
                       </span>
-                      <span className="text-[11px] font-semibold text-slate-800">
-                        {license.dateOfBirth}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                        3. Lieu de Naiss.
-                      </span>
-                      <span className="text-[11px] font-semibold text-slate-800 truncate block">
-                        {license.placeOfBirth}
+                      <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-slate-800">
+                        {license.nina}
                       </span>
                     </div>
-                  </div>
 
-                  {/* NINA / NIF */}
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                      4. NINA (Identifiant National)
-                    </span>
-                    <span className="text-[11px] font-mono font-semibold text-slate-800">
-                      {license.nina}
-                    </span>
-                  </div>
-
-                  {/* Validity Dates */}
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/80">
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                        4a. Délivré le
-                      </span>
-                      <span className="text-[10px] font-semibold text-slate-800">
-                        {license.issueDate}
-                      </span>
+                    {/* Validity Dates */}
+                    <div className="grid grid-cols-2 gap-1.5 pt-0.5 border-t border-slate-200/80">
+                      <div>
+                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                          4a. Délivré le
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] font-semibold text-slate-800">
+                          {license.issueDate}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block">
+                          4b. Expire le
+                        </span>
+                        <span className={`text-[9px] sm:text-[10px] font-bold ${license.status === 'expired' ? 'text-red-600' : 'text-[#008543]'}`}>
+                          {license.expiryDate}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block">
-                        4b. Expire le
-                      </span>
-                      <span className={`text-[10px] font-bold ${license.status === 'expired' ? 'text-red-600' : 'text-[#008543]'}`}>
-                        {license.expiryDate}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Authorized Categories Pills */}
-                  <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-bold text-slate-400 mr-1">
-                      9. Catégories:
-                    </span>
-                    {license.categories.map((cat) => (
-                      <span
-                        key={cat}
-                        className="inline-flex items-center gap-1 bg-[#008543] text-white font-bold text-[10px] px-2 py-0.5 rounded shadow-xs"
-                      >
-                        {getCategoryIcon(cat)}
-                        <span>{cat}</span>
+                    {/* Authorized Categories Pills */}
+                    <div className="pt-0.5 flex items-center gap-1 flex-wrap">
+                      <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 mr-0.5">
+                        9. Catégories:
                       </span>
-                    ))}
+                      {license.categories.map((cat) => (
+                        <span
+                          key={cat}
+                          className="inline-flex items-center gap-0.5 bg-[#008543] text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow-xs"
+                        >
+                          {getCategoryIcon(cat)}
+                          <span>{cat}</span>
+                        </span>
+                      ))}
+                    </div>
+
                   </div>
 
                 </div>
 
+                {/* Bottom Microprint Footer */}
+                <div className="relative z-10 flex items-center justify-between text-[8px] text-slate-400 font-mono border-t border-slate-200/60 pt-1">
+                  <span>DNTT • RÉPUBLIQUE DU MALI</span>
+                  <span>ECDSA P-256 SIGNED</span>
+                </div>
               </div>
 
-              {/* Bottom Microprint Footer */}
-              <div className="absolute bottom-2 left-6 right-6 flex items-center justify-between text-[8px] text-slate-400 font-mono border-t border-slate-200/60 pt-1">
-                <span>DNTT • RÉPUBLIQUE DU MALI</span>
-                <span>ECDSA P-256 SIGNED</span>
-              </div>
-            </div>
-
-            {/* --- VERSO (BACK OF CARD WITH QR CODE) --- */}
-            <div
-              className={`w-full h-full rounded-3xl p-5 sm:p-6 text-slate-900 shadow-md transition-all duration-700 transform-style-preserve-3d border border-slate-200 relative overflow-hidden bg-gradient-to-br from-white via-slate-50 to-emerald-50/40 ${
-                !isFlipped ? 'rotate-y-180 opacity-0 pointer-events-none absolute inset-0' : 'relative opacity-100'
-              }`}
-            >
-              {/* Top Bar on Verso */}
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#008543]" />
-                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                    SÉCURITÉ & CATÉGORIES DNTT
+              {/* --- VERSO (BACK OF CARD WITH QR CODE) --- */}
+              <div
+                className="absolute inset-0 w-full h-full rounded-3xl p-4 sm:p-5 text-slate-900 shadow-md border border-slate-200 overflow-hidden bg-gradient-to-br from-white via-slate-50 to-emerald-50/40 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between"
+              >
+                {/* Top Bar on Verso */}
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#008543]" />
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-900 uppercase tracking-wide">
+                      SÉCURITÉ & CATÉGORIES DNTT
+                    </span>
+                  </div>
+                  <span className="text-[8px] sm:text-[9px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+                    SIG: ECDSA/SHA-256
                   </span>
                 </div>
-                <span className="text-[9px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
-                  SIG: ECDSA/SHA-256
-                </span>
-              </div>
 
-              <div className="grid grid-cols-12 gap-3 mt-3">
-                {/* Left: Category Matrix Table */}
-                <div className="col-span-7 space-y-1">
-                  <div className="bg-white rounded-xl p-2 border border-slate-200 shadow-xs">
-                    <table className="w-full text-left text-[9px]">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-slate-400 font-semibold">
-                          <th className="pb-1">Cat.</th>
-                          <th className="pb-1">Validité</th>
-                          <th className="pb-1">Statut</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {['A1', 'A', 'B', 'C', 'D', 'E'].map((c) => {
-                          const isAuthorized = license.categories.includes(c as any);
-                          return (
-                            <tr key={c} className={isAuthorized ? 'font-bold text-slate-900 bg-emerald-50/60' : 'text-slate-400'}>
-                              <td className="py-0.5 flex items-center gap-1">
-                                {getCategoryIcon(c)}
-                                <span>{c}</span>
-                              </td>
-                              <td className="py-0.5">{isAuthorized ? `${license.issueDate} / ${license.expiryDate}` : '---'}</td>
-                              <td className="py-0.5">
-                                {isAuthorized ? (
-                                  <span className="text-[#008543] font-bold">ACTIF</span>
-                                ) : (
-                                  <span className="text-slate-300">NON</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="grid grid-cols-12 gap-2 sm:gap-3 my-auto">
+                  {/* Left: Category Matrix Table */}
+                  <div className="col-span-7 space-y-1">
+                    <div className="bg-white rounded-xl p-1.5 sm:p-2 border border-slate-200 shadow-xs">
+                      <table className="w-full text-left text-[8px] sm:text-[9px]">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-slate-400 font-semibold">
+                            <th className="pb-0.5">Cat.</th>
+                            <th className="pb-0.5">Validité</th>
+                            <th className="pb-0.5">Statut</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {['A1', 'A', 'B', 'C', 'D', 'E'].map((c) => {
+                            const isAuthorized = license.categories.includes(c as any);
+                            return (
+                              <tr key={c} className={isAuthorized ? 'font-bold text-slate-900 bg-emerald-50/60' : 'text-slate-400'}>
+                                <td className="py-0.5 flex items-center gap-1">
+                                  {getCategoryIcon(c)}
+                                  <span>{c}</span>
+                                </td>
+                                <td className="py-0.5">{isAuthorized ? `${license.issueDate} / ${license.expiryDate}` : '---'}</td>
+                                <td className="py-0.5">
+                                  {isAuthorized ? (
+                                    <span className="text-[#008543] font-bold">ACTIF</span>
+                                  ) : (
+                                    <span className="text-slate-300">NON</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  {/* Restrictions / Remarks */}
-                  <div className="text-[9px] bg-amber-50 p-1.5 rounded-lg border border-amber-200 text-amber-900">
-                    <span className="font-bold">12. Restrictions: </span>
-                    <span>{license.restrictions || 'Aucune restriction médicale spécifique.'}</span>
-                  </div>
-                </div>
-
-                {/* Right: Cryptographic QR Code */}
-                <div className="col-span-5 flex flex-col items-center justify-center bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
-                  <div
-                    onClick={() => setIsFullscreenQR(true)}
-                    className="cursor-pointer group relative p-1 bg-white rounded-xl hover:scale-105 transition-transform"
-                    title="Cliquer pour agrandir le QR Code"
-                  >
-                    {qrString ? (
-                      <QRCodeSVG
-                        value={qrString}
-                        size={105}
-                        level="M"
-                        includeMargin={false}
-                        fgColor="#064e3b"
-                      />
-                    ) : (
-                      <div className="w-[105px] h-[105px] bg-slate-100 animate-pulse rounded"></div>
-                    )}
-                    <div className="absolute inset-0 bg-black/30 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-[10px] font-bold">
-                      <Maximize2 className="w-4 h-4" />
+                    {/* Restrictions / Remarks */}
+                    <div className="text-[8px] sm:text-[9px] bg-amber-50 p-1 sm:p-1.5 rounded-lg border border-amber-200 text-amber-900">
+                      <span className="font-bold">12. Restrictions: </span>
+                      <span>{license.restrictions || 'Aucune restriction médicale.'}</span>
                     </div>
                   </div>
-                  <span className="text-[8px] font-mono font-semibold text-slate-500 mt-1 text-center">
-                    QR SÉCURISÉ HORS-LIGNE
-                  </span>
+
+                  {/* Right: Cryptographic QR Code */}
+                  <div className="col-span-5 flex flex-col items-center justify-center bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+                    <div
+                      onClick={() => setIsFullscreenQR(true)}
+                      className="cursor-pointer group relative p-1 bg-white rounded-xl hover:scale-105 transition-transform"
+                      title="Cliquer pour agrandir le QR Code"
+                    >
+                      {qrString ? (
+                        <QRCodeSVG
+                          value={qrString}
+                          size={95}
+                          level="M"
+                          includeMargin={false}
+                          fgColor="#064e3b"
+                        />
+                      ) : (
+                        <div className="w-[95px] h-[95px] bg-slate-100 animate-pulse rounded"></div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-[10px] font-bold">
+                        <Maximize2 className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <span className="text-[7px] sm:text-[8px] font-mono font-semibold text-slate-500 mt-1 text-center">
+                      QR SÉCURISÉ HORS-LIGNE
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom MRZ Security Strip */}
+                <div className="bg-slate-900 text-yellow-400 font-mono text-[7px] sm:text-[9px] px-2 py-1 rounded tracking-widest text-center truncate">
+                  {`D1MLI${license.licenseNumber.replace(/[^A-Z0-9]/g, '')}<<<<${license.nina.slice(0, 10)}<<${license.expiryDate.replace(/-/g, '')}`}
                 </div>
               </div>
-
-              {/* Bottom MRZ Security Strip */}
-              <div className="absolute bottom-2 left-4 right-4 bg-slate-900 text-yellow-400 font-mono text-[8px] sm:text-[9px] px-2 py-1 rounded tracking-widest text-center truncate">
-                {`D1MLI${license.licenseNumber.replace(/[^A-Z0-9]/g, '')}<<<<${license.nina.slice(0, 10)}<<${license.expiryDate.replace(/-/g, '')}`}
-              </div>
             </div>
-
           </div>
 
           {/* Quick Actions Under Card - Mobile-Optimized Grid */}

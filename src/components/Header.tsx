@@ -171,83 +171,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Desktop Right Actions: Install App, Guide, Network, Sync, Profile */}
-          <div className="hidden sm:flex items-center gap-2">
-            {onOpenInstall && (
-              <button
-                type="button"
-                id="btn-header-install-app"
-                onClick={onOpenInstall}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#008543] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
-                title="Installer sur le téléphone ou le PC"
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Installer l'App</span>
-              </button>
-            )}
-
-            {onOpenGuide && (
-              <button
-                type="button"
-                id="btn-open-citizen-guide"
-                onClick={onOpenGuide}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-bold transition shadow-2xs"
-                title="Guide Citoyen & FAQ Officielle"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-[#008543]" />
-                <span>Guide & FAQ</span>
-              </button>
-            )}
-
-            <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${
-                isQuotaExceeded
-                  ? 'bg-sky-50 text-sky-800 border-sky-200'
-                  : isOnline
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : 'bg-amber-50 text-amber-800 border-amber-200'
-              }`}
-            >
-              {isQuotaExceeded ? (
-                <>
-                  <Shield className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Mode Autonome (Local)</span>
-                </>
-              ) : isOnline ? (
-                <>
-                  <Wifi className="w-3.5 h-3.5 text-[#008543]" />
-                  <span>Firebase Connecté</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Mode Hors-Ligne</span>
-                </>
-              )}
-            </span>
-
-            {onRefreshData && (
-              <button
-                id="btn-refresh-data"
-                onClick={onRefreshData}
-                title="Actualiser les données"
-                className="p-1.5 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            <button
-              id="btn-user-auth"
-              onClick={onOpenAuth}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 transition cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-[#008543]" />
-              <span className="max-w-[120px] truncate">
-                {currentUserEmail ? currentUserEmail.split('@')[0] : 'Profils'}
-              </span>
-            </button>
-          </div>
+          {/* Desktop Right: Clean Minimalist or Empty */}
+          <div className="hidden sm:flex items-center gap-2"></div>
 
         </div>
       </div>

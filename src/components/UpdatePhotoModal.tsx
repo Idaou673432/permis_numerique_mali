@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DriverLicense } from '../types';
 import { saveDriverLicense } from '../lib/firebase';
 import { PhotoUploader } from './PhotoUploader';
-import { X, Camera, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Camera, Save, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 
 interface UpdatePhotoModalProps {
   isOpen: boolean;
@@ -20,6 +20,13 @@ export const UpdatePhotoModal: React.FC<UpdatePhotoModalProps> = ({
   const [photoUrl, setPhotoUrl] = useState<string>(license.photoUrl || '');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPhotoUrl(license.photoUrl || '');
+      setErrorMessage(null);
+    }
+  }, [isOpen, license.photoUrl, license.id]);
 
   if (!isOpen) return null;
 
@@ -41,7 +48,7 @@ export const UpdatePhotoModal: React.FC<UpdatePhotoModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error('Erreur mise à jour photo:', err);
-      setErrorMessage('Erreur lors de l\'enregistrement : ' + err.message);
+      setErrorMessage('Erreur lors de l\'enregistrement : ' + (err.message || 'Impossible de sauvegarder'));
     } finally {
       setIsSaving(false);
     }
@@ -68,8 +75,9 @@ export const UpdatePhotoModal: React.FC<UpdatePhotoModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition"
+            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -86,7 +94,7 @@ export const UpdatePhotoModal: React.FC<UpdatePhotoModalProps> = ({
           <PhotoUploader
             photoUrl={photoUrl}
             onChange={(url) => setPhotoUrl(url)}
-            label="Nouvelle photo d'identité (Fichier ou Caméra)"
+            label="Nouvelle photo d'identité (Caméra ou Fichier)"
           />
 
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
