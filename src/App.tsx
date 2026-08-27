@@ -232,11 +232,11 @@ export default function App() {
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <div className={`w-6 h-6 rounded-full overflow-hidden mb-0.5 border ${currentRole === 'driver' ? 'border-[#008543] ring-2 ring-emerald-500/30' : 'border-slate-300 opacity-70'}`}>
+            <div className={`w-6 h-6 rounded-full overflow-hidden mb-0.5 border ${currentRole === 'driver' ? 'border-[#008543] ring-2 ring-emerald-500/30' : 'border-slate-300 opacity-70'} bg-white`}>
               <img
-                src="/app_launch_cover.jpg"
+                src="/app_icon.png"
                 alt="Conducteur Permis"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
             <span className="text-[10px]">Conducteur</span>

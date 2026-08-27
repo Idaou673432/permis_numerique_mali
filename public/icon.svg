@@ -1,29 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <clipPath id="circleClip">
-      <circle cx="256" cy="256" r="248" />
+    <clipPath id="squircle">
+      <rect x="0" y="0" width="512" height="512" rx="112" />
     </clipPath>
-    <clipPath id="squircleClip">
-      <rect x="8" y="8" width="496" height="496" rx="108" />
-    </clipPath>
-    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFF099" />
-      <stop offset="30%" stop-color="#D4AF37" />
-      <stop offset="70%" stop-color="#AA771C" />
-      <stop offset="100%" stop-color="#5B3A08" />
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35" />
-    </filter>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </radialGradient>
   </defs>
 
-  <!-- Background Base App Icon Frame (Mali Green & Dark Tone) -->
-  <rect width="512" height="512" rx="112" fill="#031d10" />
+  <!-- Clean App Icon Base Plate -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)" />
 
-  <!-- Embedded Cover Art inside Squircle / Medallion -->
-  <g clip-path="url(#squircleClip)">
-    <image xlink:href="/app_launch_cover.jpg" x="-120" y="-30" width="752" height="572" preserveAspectRatio="xMidYMid slice" />
-    <!-- Gradient Vignette at edges to blend seamlessly -->
-    <rect x="8" y="8" width="496" height="496" fill="none" stroke="url(#goldRing)" stroke-width="12" rx="104" />
+  <!-- Clean Permis Mali Circular Medallion -->
+  <g clip-path="url(#squircle)">
+    <image xlink:href="/app_icon.png" x="16" y="16" width="480" height="480" preserveAspectRatio="xMidYMid meet" />
   </g>
 </svg>

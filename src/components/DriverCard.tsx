@@ -42,6 +42,9 @@ import {
   FileDown,
   Loader2,
   Camera,
+  Filter,
+  SlidersHorizontal,
+  Check,
 } from 'lucide-react';
 
 interface DriverCardProps {
@@ -70,6 +73,9 @@ export const DriverCard: React.FC<DriverCardProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'suspended'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [selectedViolationForPayment, setSelectedViolationForPayment] = useState<Violation | null>(null);
@@ -79,24 +85,31 @@ export const DriverCard: React.FC<DriverCardProps> = ({
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showUpdatePhotoModal, setShowUpdatePhotoModal] = useState(false);
 
-  // Filter licenses by licenseNumber, nina, fullName, or nif
+  // Filter licenses by search query, status and category
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredLicenses = allLicenses.filter((lic) => {
-    if (!normalizedSearch) return true;
-    return (
+    const matchesSearch = !normalizedSearch || (
       lic.licenseNumber.toLowerCase().includes(normalizedSearch) ||
       lic.nina.toLowerCase().includes(normalizedSearch) ||
       lic.fullName.toLowerCase().includes(normalizedSearch) ||
+      lic.categories.some(cat => cat.toLowerCase().includes(normalizedSearch)) ||
+      (lic.placeOfIssue && lic.placeOfIssue.toLowerCase().includes(normalizedSearch)) ||
       (lic.nif && lic.nif.toLowerCase().includes(normalizedSearch)) ||
       lic.id.toLowerCase().includes(normalizedSearch)
     );
+
+    const matchesStatus = statusFilter === 'all' || lic.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || lic.categories.includes(categoryFilter);
+
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (filteredLicenses.length > 0) {
-      onSelectLicense(filteredLicenses[0]);
-    }
+  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || categoryFilter !== 'all';
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
   };
 
   // Generate cryptographic QR payload whenever license changes
@@ -257,183 +270,178 @@ export const DriverCard: React.FC<DriverCardProps> = ({
         </div>
       )}
       
-      {/* Driver Selector & Quick Search by License Number / NINA */}
-      <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl space-y-3.5 shadow-xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="driver-license-search" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5 text-[#008543]" />
-                Rechercher & Sélectionner un Titulaire / Permis
-              </label>
-              {searchTerm && (
-                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-mono font-semibold">
-                  {filteredLicenses.length} / {allLicenses.length}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Trouvez rapidement un titre par <strong>Numéro de permis (ID Unique)</strong>, <strong>Numéro NINA</strong> ou <strong>Nom</strong>.
-            </p>
-          </div>
-
-          {/* Offline Badge */}
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-emerald-900 shrink-0">
-            <Smartphone className="w-3.5 h-3.5 text-[#008543] shrink-0" />
-            <div className="text-left">
-              <p className="text-[10px] font-bold leading-tight">PWA Hors-Ligne</p>
-              <p className="text-[9px] text-emerald-700">Stockage local sécurisé</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Search Bar with Submit & Clear */}
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+      {/* Driver Search & Filter Bar */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 space-y-3 shadow-xs">
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+          {/* Search Input */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
-              id="driver-license-search"
+              id="driver-search-input"
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher par N° Permis (ex: ML-BKO-2024...), NINA (ex: 10283...), ou Nom..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition font-medium"
+              placeholder="Rechercher par N° Permis, NINA, Nom, Catégorie..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition font-medium"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 bg-slate-200/60 hover:bg-slate-200 rounded-lg transition"
-                title="Effacer la recherche"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 bg-slate-200/60 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+                title="Effacer le texte"
               >
                 <X className="w-3 h-3" />
               </button>
             )}
           </div>
 
-          {filteredLicenses.length > 0 && searchTerm && (
-            <button
-              type="submit"
-              className="px-3.5 py-2 bg-[#008543] hover:bg-[#007038] text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-xs shrink-0"
-            >
-              <span>Afficher</span>
-            </button>
-          )}
-        </form>
-
-        {/* Filtered License Quick Selectors */}
-        {filteredLicenses.length > 0 ? (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {filteredLicenses.map((lic) => {
-              const isSelected = lic.id === license.id;
-              return (
-                <button
-                  key={lic.id}
-                  type="button"
-                  onClick={() => onSelectLicense(lic)}
-                  className={`px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 text-left border ${
-                    isSelected
-                      ? 'bg-[#008543] text-white border-[#008543] shadow-xs ring-2 ring-emerald-500/30'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <User className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
-                  <div className="truncate">
-                    <span className="font-bold block truncate">{lic.fullName}</span>
-                    <span className={`text-[10px] font-mono block ${isSelected ? 'text-emerald-100' : 'text-slate-500'}`}>
-                      {lic.licenseNumber} • NINA: {lic.nina}
-                    </span>
-                  </div>
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ml-1 ${
-                      lic.status === 'active'
-                        ? 'bg-emerald-400'
-                        : lic.status === 'expired'
-                        ? 'bg-red-400'
-                        : 'bg-amber-400'
-                    }`}
-                    title={lic.status === 'active' ? 'Valide' : lic.status === 'expired' ? 'Expiré' : 'Suspendu'}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-500 space-y-1.5">
-            <p className="font-medium text-slate-700">
-              Aucun permis ne correspond à la recherche « <span className="font-mono text-slate-900">{searchTerm}</span> »
-            </p>
-            <p className="text-[11px] text-slate-400">
-              Vérifiez les chiffres du N° de permis ou du NINA.
-            </p>
+          {/* Filter Toggle Button & Active Filter Pill */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setSearchTerm('')}
-              className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-lg border border-slate-200 transition inline-block"
+              id="btn-driver-filter-toggle"
+              onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
+                isFilterExpanded || hasActiveFilters
+                  ? 'bg-emerald-50 text-[#008543] border-emerald-300 shadow-xs'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+              }`}
             >
-              Réinitialiser la recherche
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filtres</span>
+              {hasActiveFilters && (
+                <span className="w-2 h-2 rounded-full bg-[#008543] animate-pulse" />
+              )}
             </button>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-2.5 py-2 rounded-xl text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 border border-transparent transition cursor-pointer"
+                title="Réinitialiser tous les filtres"
+              >
+                <span className="text-[11px]">Effacer</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Expandable Filters Panel */}
+        {isFilterExpanded && (
+          <div className="pt-2 border-t border-slate-100 space-y-2.5 animate-in fade-in slide-in-from-top-1">
+            {/* Status Filter */}
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-[11px] font-semibold text-slate-500 mr-1 flex items-center gap-1">
+                <Filter className="w-3 h-3 text-slate-400" />
+                Statut:
+              </span>
+              {[
+                { id: 'all', label: 'Tous' },
+                { id: 'active', label: 'Valide (Actif)', color: 'text-emerald-700' },
+                { id: 'suspended', label: 'Suspendu', color: 'text-amber-700' },
+                { id: 'expired', label: 'Expiré', color: 'text-red-700' },
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStatusFilter(s.id as any)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                    statusFilter === s.id
+                      ? 'bg-[#008543] text-white shadow-xs font-bold'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-[11px] font-semibold text-slate-500 mr-1 flex items-center gap-1">
+                <Car className="w-3 h-3 text-slate-400" />
+                Catégorie:
+              </span>
+              {[
+                { id: 'all', label: 'Toutes' },
+                { id: 'A', label: 'A (Motos)' },
+                { id: 'B', label: 'B (Véhicules)' },
+                { id: 'C', label: 'C (Poids Lourds)' },
+                { id: 'D', label: 'D (Transport)' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                    categoryFilter === cat.id
+                      ? 'bg-slate-800 text-white shadow-xs font-bold'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Results List if search/filter is active */}
+        {hasActiveFilters && (
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+              <span className="font-semibold text-slate-700">
+                {filteredLicenses.length} résultat{filteredLicenses.length > 1 ? 's' : ''} trouvé{filteredLicenses.length > 1 ? 's' : ''} :
+              </span>
+            </div>
+
+            {filteredLicenses.length > 0 ? (
+              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+                {filteredLicenses.map((lic) => {
+                  const isSelected = lic.id === license.id;
+                  return (
+                    <button
+                      key={lic.id}
+                      type="button"
+                      onClick={() => onSelectLicense(lic)}
+                      className={`px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-2 text-left border cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#008543] text-white border-[#008543] shadow-xs ring-2 ring-emerald-500/30'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                      }`}
+                    >
+                      <User className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                      <div className="truncate">
+                        <span className="font-bold block truncate">{lic.fullName}</span>
+                        <span className={`text-[10px] font-mono block ${isSelected ? 'text-emerald-100' : 'text-slate-500'}`}>
+                          {lic.licenseNumber} • Cat. {lic.categories.join(', ')}
+                        </span>
+                      </div>
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ml-1 ${
+                          lic.status === 'active'
+                            ? 'bg-emerald-400'
+                            : lic.status === 'expired'
+                            ? 'bg-red-400'
+                            : 'bg-amber-400'
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-3 bg-slate-50 rounded-xl text-center text-xs text-slate-500">
+                Aucun permis ne correspond à vos critères de recherche.
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Main Tabs Navigation */}
-      <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 gap-1 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('card')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap ${
-            activeTab === 'card'
-              ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <QrCode className="w-4 h-4 text-[#008543]" />
-          <span>Titre de Conduite (Carte)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('details')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap ${
-            activeTab === 'details'
-              ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <FileText className="w-4 h-4 text-blue-600" />
-          <span>Détails Biométriques</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('infractions')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap relative ${
-            activeTab === 'infractions'
-              ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <Flame className="w-4 h-4 text-amber-500" />
-          <span>Infractions & Points ({license.points ?? 12}/12 pts)</span>
-          {driverViolations.length > 0 && (
-            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
-              {driverViolations.length}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap ${
-            activeTab === 'security'
-              ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Preuve Cryptographique ECDSA</span>
-        </button>
-      </div>
-
-      {/* TAB 1: DIGITAL CARD VIEW */}
+      {/* TAB: DIGITAL CARD VIEW (Direct Single View) */}
       {activeTab === 'card' && (
         <div className="space-y-6">
           
@@ -807,82 +815,89 @@ export const DriverCard: React.FC<DriverCardProps> = ({
 
           </div>
 
-          {/* Quick Actions Under Card */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
-              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#008543]" />
+          {/* Quick Actions Under Card - Mobile-Optimized Grid */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 space-y-3.5 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <span className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#008543]" />
                 Actions Rapides Citoyen
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                Services & documents officiels
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            {/* Primary Actions (Highlighted & Full/Half Width) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                id="btn-show-qr-direct"
+                onClick={() => setIsFullscreenQR(true)}
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer"
+              >
+                <QrCode className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="truncate">Présenter QR au Contrôle</span>
+              </button>
+
               <button
                 id="btn-export-pdf"
                 onClick={handleExportPDF}
                 disabled={isExportingPDF}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#008543] hover:bg-emerald-800 disabled:opacity-75 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer"
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-[#008543] hover:bg-emerald-800 active:scale-[0.99] disabled:opacity-75 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer"
               >
                 {isExportingPDF ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-emerald-200" />
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-200 shrink-0" />
                 ) : (
-                  <FileDown className="w-4 h-4 text-emerald-200" />
+                  <FileDown className="w-4 h-4 text-emerald-200 shrink-0" />
                 )}
-                <span>{isExportingPDF ? 'Exportation PDF...' : 'Exporter en PDF'}</span>
+                <span className="truncate">{isExportingPDF ? 'Génération du PDF...' : 'Télécharger Attestation PDF'}</span>
               </button>
+            </div>
 
-              <button
-                id="btn-show-qr-direct"
-                onClick={() => setIsFullscreenQR(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer"
-              >
-                <QrCode className="w-4 h-4 text-emerald-400" />
-                <span>Présenter QR au Contrôle</span>
-              </button>
-
+            {/* Secondary Actions (Clean 2-column grid on mobile, 3/4-col on desktop) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-0.5">
               <button
                 id="btn-print-certificate"
                 onClick={() => setShowCertificateModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 shadow-xs transition cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:px-3 sm:py-2.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 shadow-2xs transition cursor-pointer text-center"
               >
-                <Printer className="w-4 h-4 text-[#008543]" />
-                <span>Imprimer l'Attestation</span>
-              </button>
-
-              <button
-                id="btn-open-guide-card"
-                onClick={() => setShowGuideModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer"
-              >
-                <HelpCircle className="w-4 h-4 text-[#008543]" />
-                <span>Guide Citoyen & FAQ</span>
+                <Printer className="w-4 h-4 text-[#008543] shrink-0" />
+                <span className="truncate text-center">Attestation</span>
               </button>
 
               <button
                 id="btn-open-install-modal-card"
                 onClick={() => setShowInstallModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:px-3 sm:py-2.5 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 active:bg-emerald-200/80 border border-emerald-200/90 rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer text-center"
               >
-                <Smartphone className="w-4 h-4 text-emerald-200" />
-                <span>Installer sur mon Téléphone</span>
+                <Smartphone className="w-4 h-4 text-[#008543] shrink-0" />
+                <span className="truncate text-center">Installer l'App</span>
               </button>
 
               <button
                 id="btn-update-photo-card"
                 onClick={() => setShowUpdatePhotoModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 shadow-xs transition cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:px-3 sm:py-2.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 shadow-2xs transition cursor-pointer text-center"
               >
-                <Camera className="w-4 h-4 text-[#008543]" />
-                <span>{license.photoUrl ? 'Changer ma Photo' : 'Ajouter ma Photo'}</span>
+                <Camera className="w-4 h-4 text-[#008543] shrink-0" />
+                <span className="truncate text-center">{license.photoUrl ? 'Changer Photo' : 'Ajouter Photo'}</span>
               </button>
 
               <button
                 id="btn-download-license"
                 onClick={handleSimulateDownload}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 shadow-xs transition cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:px-3 sm:py-2.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 shadow-2xs transition cursor-pointer text-center"
               >
-                <Download className="w-4 h-4 text-slate-400" />
-                <span>{downloadSuccess ? 'Titre Sauvegardé !' : 'Enregistrer Image / Pass'}</span>
+                <Download className="w-4 h-4 text-slate-500 shrink-0" />
+                <span className="truncate text-center">{downloadSuccess ? 'Sauvegardé !' : 'Enregistrer Pass'}</span>
+              </button>
+
+              <button
+                id="btn-open-guide-card"
+                onClick={() => setShowGuideModal(true)}
+                className="col-span-2 sm:col-span-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:px-3 sm:py-2.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 shadow-2xs transition cursor-pointer text-center"
+              >
+                <HelpCircle className="w-4 h-4 text-slate-600 shrink-0" />
+                <span className="truncate text-center">Guide & FAQ</span>
               </button>
             </div>
           </div>
